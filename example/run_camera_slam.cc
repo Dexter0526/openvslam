@@ -28,7 +28,7 @@
 #endif
 
 void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
-                   const std::string& vocab_file_path, const std::string cam_num, const std::string& mask_img_path,
+                   const std::string& vocab_file_path, const unsigned int cam_num, const std::string& mask_img_path,
                    const float scale, const std::string& map_db_path) {
     // load the mask image
     const cv::Mat mask = mask_img_path.empty() ? cv::Mat{} : cv::imread(mask_img_path, cv::IMREAD_GRAYSCALE);
@@ -46,7 +46,7 @@ void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
     socket_publisher::publisher publisher(cfg, &SLAM, SLAM.get_frame_publisher(), SLAM.get_map_publisher());
 #endif
 
-    auto video = cv::VideoCapture(cam_num);
+    auto video = cv::VideoCapture("rtsp://admin:1234@192.168.0.53:554/h264");
     if (!video.isOpened()) {
         spdlog::critical("cannot open a camera {}", cam_num);
         SLAM.shutdown();
