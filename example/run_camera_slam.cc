@@ -26,10 +26,10 @@
 #ifdef USE_GOOGLE_PERFTOOLS
 #include <gperftools/profiler.h>
 #endif
-
+`
 void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
                    const std::string& vocab_file_path, const unsigned int cam_num, const std::string& mask_img_path,
-                   const float scale, const std::string& map_db_path) {
+                   const float scale, const std::string& map_db_path, const std::String cam_path) {
     // load the mask image
     const cv::Mat mask = mask_img_path.empty() ? cv::Mat{} : cv::imread(mask_img_path, cv::IMREAD_GRAYSCALE);
 
@@ -46,7 +46,10 @@ void mono_tracking(const std::shared_ptr<openvslam::config>& cfg,
     socket_publisher::publisher publisher(cfg, &SLAM, SLAM.get_frame_publisher(), SLAM.get_map_publisher());
 #endif
 
-    auto video = cv::VideoCapture("rtsp://admin:1234@192.168.0.53:554/h264");
+    auto video = cv::VideoCapture(cam_num);
+    if (cam_path != null) {
+        video = cv::VideoCapture(cam_path);
+    }
     if (!video.isOpened()) {
         spdlog::critical("cannot open a camera {}", cam_num);
         SLAM.shutdown();
@@ -233,6 +236,8 @@ int main(int argc, char* argv[]) {
     auto scale = op.add<popl::Value<float>>("s", "scale", "scaling ratio of images", 1.0);
     auto map_db_path = op.add<popl::Value<std::string>>("p", "map-db", "store a map database at this path after SLAM", "");
     auto debug_mode = op.add<popl::Switch>("", "debug", "debug mode");
+    auto cam_path = op.add<popl::Value<std::string>>("u", "uri", "camera path");
+    
     try {
         op.parse(argc, argv);
     }
@@ -282,11 +287,11 @@ int main(int argc, char* argv[]) {
     // run tracking
     if (cfg->camera_->setup_type_ == openvslam::camera::setup_type_t::Monocular) {
         mono_tracking(cfg, vocab_file_path->value(), cam_num->value(), mask_img_path->value(),
-                      scale->value(), map_db_path->value());
+                      scale->value(), map_db_path->value(), cam_path->value());
     }
     else if (cfg->camera_->setup_type_ == openvslam::camera::setup_type_t::Stereo) {
         stereo_tracking(cfg, vocab_file_path->value(), cam_num->value(), mask_img_path->value(),
-                        scale->value(), map_db_path->value());
+                        scale->value(), map_db_path->value(), cam_path->value());
     }
     else {
         throw std::runtime_error("Invalid setup type: " + cfg->camera_->get_setup_type_string());
